@@ -1,7 +1,5 @@
 # iUpload
 
----
-
 A image processing service built with Go.
 
 # User Authentication
