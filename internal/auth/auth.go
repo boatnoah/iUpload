@@ -85,3 +85,8 @@ func (a *Auth) LogInUser(ctx context.Context, userLoginPayload UserLoginPayload)
 
 	return nil
 }
+
+func (a *Auth) ValidateUser(ctx context.Context, token string) (bool, error) {
+	exist, err := a.storage.SessionStorage.FindToken(ctx, token)
+	return exist, err
+}

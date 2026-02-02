@@ -26,7 +26,7 @@ type Storage struct {
 	}
 	SessionStorage interface {
 		CreateSession(context.Context, uuid.UUID) (*Session, error)
-		FindToken(context.Context, string) error
+		FindToken(context.Context, string) (bool, error)
 	}
 }
 

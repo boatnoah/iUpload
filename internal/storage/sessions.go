@@ -52,6 +52,26 @@ func (s *Sessions) CreateSession(ctx context.Context, uuid uuid.UUID) (*Session,
 
 }
 
+func (s *Sessions) FindToken(ctx context.Context, token string) (bool, error) {
+	query := `		
+		select exists (
+		  select 1 from table where session_token = $1
+		)
+	`
+
+	var exists bool
+
+	hashedToken := hashTokenSHA256(token)
+	err := s.db.QueryRowContext(ctx, query, hashedToken).Scan(&exists)
+
+	if err != nil {
+		return false, nil
+	}
+
+	return exists, nil
+
+}
+
 func newToken() (string, error) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
@@ -65,8 +85,4 @@ func newToken() (string, error) {
 func hashTokenSHA256(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
-}
-
-func (s *Sessions) FindToken(ctx context.Context, token string) error {
-	return nil
 }
