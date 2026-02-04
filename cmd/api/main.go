@@ -48,11 +48,14 @@ func main() {
 			w.Write([]byte("Welcome"))
 		})
 		r.Post("/register", app.registerUserHandler)
-		r.Post("/login", func(w http.ResponseWriter, r *http.Request) {})
+		r.Post("/login", app.logInUser)
 		r.Route("/images", func(r chi.Router) {
+			r.Use(app.AuthTokenMiddleware)
 			r.Post("/", func(w http.ResponseWriter, r *http.Request) {})               // upload images
 			r.Post("/{id}/transform", func(w http.ResponseWriter, r *http.Request) {}) // transform images
-			r.Get("/{id}", func(w http.ResponseWriter, r *http.Request) {})            // transform images
+			r.Get("/{id}", func(w http.ResponseWriter, r *http.Request) {
+				w.Write([]byte("Welcome to a protected route"))
+			}) // transform images
 		})
 	})
 

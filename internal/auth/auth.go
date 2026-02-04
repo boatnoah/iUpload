@@ -33,13 +33,17 @@ type UserLoginPayload struct {
 	Password string `json:"password"`
 }
 
+func normalizeUsername(username string) string {
+	return strings.ToLower(strings.TrimSpace(username))
+}
+
 func (a *Auth) RegisterUser(ctx context.Context, userPayload UserPayload) (*storage.User, *storage.Session, error) {
 
 	var user storage.User
 
 	user.FirstName = userPayload.FirstName
 	user.LastName = userPayload.LastName
-	user.UserName = strings.ToLower(strings.TrimSpace(userPayload.UserName))
+	user.UserName = normalizeUsername(userPayload.UserName)
 
 	var password storage.Password
 
@@ -66,24 +70,30 @@ func (a *Auth) RegisterUser(ctx context.Context, userPayload UserPayload) (*stor
 	return &user, session, nil
 }
 
-func (a *Auth) LogInUser(ctx context.Context, userLoginPayload UserLoginPayload) error {
+func (a *Auth) LogInUser(ctx context.Context, userLoginPayload UserLoginPayload) (*storage.Session, error) {
 
 	if userLoginPayload.UserName == "" || userLoginPayload.Password == "" {
-		return ErrorInvalidPayload
+		return nil, ErrorInvalidPayload
 	}
 
-	user, err := a.storage.UserStorage.GetUserByUserName(ctx, userLoginPayload.UserName)
+	user, err := a.storage.UserStorage.GetUserByUserName(ctx, normalizeUsername(userLoginPayload.UserName))
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = user.HashedPassword.Compare(userLoginPayload.Password)
 	if err != nil {
-		return ErrorPasswordMismatch
+		return nil, ErrorPasswordMismatch
 	}
 
-	return nil
+	session, err := a.storage.SessionStorage.CreateSession(ctx, user.ID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return session, nil
 }
 
 func (a *Auth) ValidateUser(ctx context.Context, token string) (bool, error) {

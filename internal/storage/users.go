@@ -88,19 +88,22 @@ func (u *UserStore) GetUserByUserName(ctx context.Context, username string) (*Us
 	defer cancel()
 
 	var user User
+	var password Password
 
 	err := u.db.QueryRowContext(ctx, query, username).Scan(
 		&user.ID,
 		&user.FirstName,
 		&user.LastName,
 		&user.UserName,
-		&user.HashedPassword,
+		&password.hash,
 		&user.CreatedAt,
 	)
 
 	if err != nil {
 		return nil, err
 	}
+
+	user.HashedPassword = password
 
 	return &user, nil
 

@@ -42,3 +42,33 @@ func (a *app) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write(sessionJson)
 
 }
+
+func (a *app) logInUser(w http.ResponseWriter, r *http.Request) {
+
+	var userLoginPayload auth.UserLoginPayload
+
+	decoder := json.NewDecoder(r.Body)
+
+	err := decoder.Decode(&userLoginPayload)
+
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	session, err := a.auth.LogInUser(r.Context(), userLoginPayload)
+	if err != nil {
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	sessionJson, err := json.Marshal(session)
+
+	if err != nil {
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(sessionJson)
+
+}

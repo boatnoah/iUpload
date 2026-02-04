@@ -20,7 +20,6 @@ type Sessions struct {
 }
 
 type Session struct {
-	Uuid  uuid.UUID
 	Token string
 }
 
@@ -38,7 +37,6 @@ func (s *Sessions) CreateSession(ctx context.Context, uuid uuid.UUID) (*Session,
 		return nil, err
 	}
 
-	session.Uuid = uuid
 	session.Token = sessionToken
 
 	expiryDate := time.Now().Add(expiryOffset * time.Hour)
@@ -55,7 +53,7 @@ func (s *Sessions) CreateSession(ctx context.Context, uuid uuid.UUID) (*Session,
 func (s *Sessions) FindToken(ctx context.Context, token string) (bool, error) {
 	query := `		
 		select exists (
-		  select 1 from table where session_token = $1
+		  select 1 from sessions where session_token = $1
 		)
 	`
 
@@ -69,9 +67,7 @@ func (s *Sessions) FindToken(ctx context.Context, token string) (bool, error) {
 	}
 
 	return exists, nil
-
 }
-
 func newToken() (string, error) {
 	b := make([]byte, 32)
 	_, err := rand.Read(b)
