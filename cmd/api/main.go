@@ -3,10 +3,10 @@ package main
 import (
 	"errors"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/boatnoah/iupload/internal/auth"
+	"github.com/boatnoah/iupload/internal/blob"
 	"github.com/boatnoah/iupload/internal/db"
 	"github.com/boatnoah/iupload/internal/processor"
 	"github.com/boatnoah/iupload/internal/storage"
@@ -24,15 +24,26 @@ func main() {
 		panic(errors.New("No database creds"))
 	}
 
-	db, err := db.New(os.Getenv("DATABASE_URL"), 30, 30, "15m")
+	db, err := db.New(RequiredEnv("DATABASE_URL"), 30, 30, "15m")
 
+	if err != nil {
+		panic(err)
+	}
+
+	blobStore, err := blob.New(
+		RequiredEnv("S3_ENDPOINT"),
+		RequiredEnv("S3_REGION"),
+		RequiredEnv("S3_ACCESS_KEY_ID"),
+		RequiredEnv("S3_SECRET_ACCESS_KEY"),
+		RequiredEnv("S3_BUCKET"),
+	)
 	if err != nil {
 		panic(err)
 	}
 
 	store := storage.NewStorage(db)
 
-	svc := processor.New(store)
+	svc := processor.New(store, blobStore)
 	auth := auth.New(store)
 
 	app := app{

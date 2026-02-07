@@ -11,12 +11,14 @@ import (
 
 var (
 	ErrNotFound          = errors.New("resource not found")
+	ErrorNotFound        = errors.New("Did not find record with that id")
 	QueryTimeoutDuration = time.Second * 5
 )
 
 type Storage struct {
 	ImageStorage interface {
-		GetById(context.Context, string) error
+		Create(context.Context, string, string, string) error
+		GetById(context.Context, string) (*Image, error)
 		DeleteById(context.Context, string) error
 	}
 	UserStorage interface {
