@@ -19,7 +19,7 @@ type Image struct {
 	CreatedAt   string    `json:"created_at"`
 }
 
-func (i *Images) Create(ctx context.Context, userId, objectKey, contentType string) error {
+func (i *Images) Create(ctx context.Context, userId uuid.UUID, objectKey, contentType string) error {
 	query := `
 		insert into images (user_id, object_key, content_type)
 		values ($1, $2, $3) returning id, created_at

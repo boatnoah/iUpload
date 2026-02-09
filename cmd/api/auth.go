@@ -43,7 +43,7 @@ func (a *app) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (a *app) logInUser(w http.ResponseWriter, r *http.Request) {
+func (a *app) logInUserHandler(w http.ResponseWriter, r *http.Request) {
 
 	var userLoginPayload auth.UserLoginPayload
 

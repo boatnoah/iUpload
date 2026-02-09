@@ -96,7 +96,20 @@ func (a *Auth) LogInUser(ctx context.Context, userLoginPayload UserLoginPayload)
 	return session, nil
 }
 
-func (a *Auth) ValidateUser(ctx context.Context, token string) (bool, error) {
-	exist, err := a.storage.SessionStorage.FindToken(ctx, token)
-	return exist, err
+func (a *Auth) AuthenticateToken(ctx context.Context, token string) (*storage.User, error) {
+
+	userID, err := a.storage.SessionStorage.GetIDbyToken(ctx, token)
+
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := a.storage.UserStorage.GetUserById(ctx, userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+
 }

@@ -120,19 +120,22 @@ func (u *UserStore) GetUserById(ctx context.Context, uuid string) (*User, error)
 	defer cancel()
 
 	var user User
+	var password Password
 
 	err := u.db.QueryRowContext(ctx, query, uuid).Scan(
 		&user.ID,
 		&user.FirstName,
 		&user.LastName,
 		&user.UserName,
-		&user.HashedPassword,
+		&password.hash,
 		&user.CreatedAt,
 	)
 
 	if err != nil {
 		return nil, err
 	}
+
+	user.HashedPassword = password
 
 	return &user, nil
 

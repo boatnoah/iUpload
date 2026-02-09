@@ -17,7 +17,7 @@ var (
 
 type Storage struct {
 	ImageStorage interface {
-		Create(context.Context, string, string, string) error
+		Create(context.Context, uuid.UUID, string, string) error
 		GetById(context.Context, string) (*Image, error)
 		DeleteById(context.Context, string) error
 	}
@@ -28,7 +28,7 @@ type Storage struct {
 	}
 	SessionStorage interface {
 		CreateSession(context.Context, uuid.UUID) (*Session, error)
-		FindToken(context.Context, string) (bool, error)
+		GetIDbyToken(context.Context, string) (string, error)
 	}
 }
 

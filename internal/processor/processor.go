@@ -2,9 +2,11 @@ package processor
 
 import (
 	"context"
+	"fmt"
 	"io"
 
 	"github.com/boatnoah/iupload/internal/storage"
+	"github.com/google/uuid"
 )
 
 type ObjectStore interface {
@@ -22,7 +24,21 @@ func New(storage *storage.Storage, objectStore ObjectStore) *Processor {
 	return &Processor{storage: storage, objectStore: objectStore}
 }
 
-func (p *Processor) UploadImage() {
+func (p *Processor) UploadImage(ctx context.Context, userID uuid.UUID, fileName string, body io.ReadCloser, contentType string) error {
+
+	key := fmt.Sprintf("%s/%s", userID, fileName)
+	err := p.storage.ImageStorage.Create(ctx, userID, key, contentType)
+
+	if err != nil {
+		return err
+	}
+
+	err = p.objectStore.Put(ctx, key, body, contentType)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p *Processor) GetByImageId() {

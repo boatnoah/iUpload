@@ -35,12 +35,3 @@ A image processing service built with Go.
     - Compress
 
     - Change format (JPEG, PNG, etc.)
-
-    - Apply filters (grayscale, sepia, etc
-
-- id UUID PRIMARY KEY
-- user_id UUID NOT NULL (owner)
-- object_key TEXT NOT NULL (full key like users/<uid>/<image-id>/original.jpg)
-- content_type TEXT NOT NULL (e.g. image/jpeg)
-- size_bytes BIGINT NOT NULL
-- created_at TIMESTAMPTZ NOT NULL DEFAULT now()
