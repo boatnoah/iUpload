@@ -17,7 +17,7 @@ var (
 
 type Storage struct {
 	ImageStorage interface {
-		Create(context.Context, uuid.UUID, string, string) error
+		Create(context.Context, uuid.UUID, string, string) (*Image, error)
 		GetById(context.Context, string) (*Image, error)
 		DeleteById(context.Context, string) error
 	}

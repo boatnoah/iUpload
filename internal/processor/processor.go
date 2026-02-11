@@ -24,21 +24,21 @@ func New(storage *storage.Storage, objectStore ObjectStore) *Processor {
 	return &Processor{storage: storage, objectStore: objectStore}
 }
 
-func (p *Processor) UploadImage(ctx context.Context, userID uuid.UUID, fileName string, body io.ReadCloser, contentType string) error {
+func (p *Processor) UploadImage(ctx context.Context, userID uuid.UUID, fileName string, body io.ReadCloser, contentType string) (*storage.Image, error) {
 
 	key := fmt.Sprintf("%s/%s", userID, fileName)
-	err := p.storage.ImageStorage.Create(ctx, userID, key, contentType)
+	image, err := p.storage.ImageStorage.Create(ctx, userID, key, contentType)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	err = p.objectStore.Put(ctx, key, body, contentType)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return image, nil
 }
 
 func (p *Processor) GetByImageId() {

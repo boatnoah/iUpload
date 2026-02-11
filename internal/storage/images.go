@@ -19,7 +19,7 @@ type Image struct {
 	CreatedAt   string    `json:"created_at"`
 }
 
-func (i *Images) Create(ctx context.Context, userId uuid.UUID, objectKey, contentType string) error {
+func (i *Images) Create(ctx context.Context, userId uuid.UUID, objectKey, contentType string) (*Image, error) {
 	query := `
 		insert into images (user_id, object_key, content_type)
 		values ($1, $2, $3) returning id, created_at
@@ -30,22 +30,26 @@ func (i *Images) Create(ctx context.Context, userId uuid.UUID, objectKey, conten
 
 	var image Image
 
+	image.UserID = userId
+	image.ObjectKey = objectKey
+	image.ContentType = contentType
+
 	err := i.db.QueryRowContext(
 		ctx,
 		query,
-		image.UserID,
-		image.ObjectKey,
-		image.ContentType,
+		userId,
+		objectKey,
+		contentType,
 	).Scan(
 		&image.ID,
 		&image.CreatedAt,
 	)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return &image, nil
 
 }
 
