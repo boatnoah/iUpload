@@ -7,7 +7,9 @@ import (
 	"io"
 
 	"github.com/boatnoah/iupload/internal/storage"
+	"github.com/disintegration/imaging"
 	"github.com/google/uuid"
+	"github.com/mailru/easyjson/buffer"
 )
 
 var (
@@ -30,6 +32,34 @@ type ImagePayload struct {
 	FileName    string
 	Body        io.ReadCloser
 	ContentType string
+}
+
+type OperationPayload struct {
+	Transformation *Transformations `json:"transformation"`
+}
+
+type Transformations struct {
+	Resize  *Resize  `json:"resize"`
+	Crop    *Crop    `json:"crop"`
+	Rotate  *float64 `json:"rotate"`
+	Filters *Filters `json:"filters"`
+}
+
+type Resize struct {
+	Width  int `json:"width"`
+	Height int `json:"height"`
+}
+
+type Crop struct {
+	Width  int `json:"width"`
+	Height int `json:"height"`
+	X      int `json:"x"`
+	Y      int `json:"y"`
+}
+
+type Filters struct {
+	GrayScale bool `json:"grayscale"`
+	Sepia     bool `json:"sepia"`
 }
 
 func New(storage *storage.Storage, objectStore ObjectStore) *Processor {
@@ -97,5 +127,45 @@ func (p *Processor) DeleteByImageId(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (p *Processor) TranformImage(operation string) {
+func (p *Processor) TranformImage(ctx context.Context, id uuid.UUID, transformPayload Transformations) ([]byte, error) {
+	reader, contentType, err := p.GetByImageId(ctx, id)
+
+	if err != nil {
+		return nil, err
+	}
+
+	img, err := imaging.Decode(reader)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if transformPayload.Resize != nil {
+	}
+
+	if transformPayload.Crop != nil {
+	}
+
+	if transformPayload.Rotate != nil {
+	}
+
+	if transformPayload.Filters != nil {
+	}
+
+	var b buffer.Buffer
+	var format imaging.Format
+
+	if contentType == "image/png" {
+		format = imaging.PNG
+	} else {
+		format = imaging.JPEG
+	}
+
+	err = imaging.Encode(&b, img, format)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return b, nil
 }
