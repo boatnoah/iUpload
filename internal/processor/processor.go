@@ -20,20 +20,27 @@ type Processor struct {
 	objectStore ObjectStore
 }
 
+type ImagePayload struct {
+	UserID      uuid.UUID
+	FileName    string
+	Body        io.ReadCloser
+	ContentType string
+}
+
 func New(storage *storage.Storage, objectStore ObjectStore) *Processor {
 	return &Processor{storage: storage, objectStore: objectStore}
 }
 
-func (p *Processor) UploadImage(ctx context.Context, userID uuid.UUID, fileName string, body io.ReadCloser, contentType string) (*storage.Image, error) {
-
-	key := fmt.Sprintf("%s/%s", userID, fileName)
-	image, err := p.storage.ImageStorage.Create(ctx, userID, key, contentType)
+func (p *Processor) UploadImage(ctx context.Context, imagePayload ImagePayload) (*storage.Image, error) {
+	prefix := uuid.New()
+	key := fmt.Sprintf("%s/%s-%s", imagePayload.UserID, imagePayload.FileName, prefix)
+	image, err := p.storage.ImageStorage.Create(ctx, imagePayload.UserID, key, imagePayload.ContentType)
 
 	if err != nil {
 		return nil, err
 	}
 
-	err = p.objectStore.Put(ctx, key, body, contentType)
+	err = p.objectStore.Put(ctx, key, imagePayload.Body, imagePayload.ContentType)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +48,24 @@ func (p *Processor) UploadImage(ctx context.Context, userID uuid.UUID, fileName 
 	return image, nil
 }
 
-func (p *Processor) GetByImageId() {
+func (p *Processor) GetByImageId(ctx context.Context, id uuid.UUID) (io.ReadCloser, string, error) {
+
+	imageMetaData, err := p.storage.ImageStorage.GetById(ctx, id)
+
+	if err != nil {
+
+		return nil, "", err
+	}
+
+	key := imageMetaData.ObjectKey
+
+	image, err := p.objectStore.Get(ctx, key)
+
+	if err != nil {
+		return nil, "", err
+	}
+
+	return image, imageMetaData.ContentType, nil
 }
 
 func (p *Processor) DeleteByImageId() {

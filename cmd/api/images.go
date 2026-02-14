@@ -3,10 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-	"strings"
 
+	"github.com/boatnoah/iupload/internal/processor"
 	"github.com/boatnoah/iupload/internal/storage"
+	"github.com/go-chi/chi"
+	"github.com/google/uuid"
 )
 
 type userKey string
@@ -33,7 +36,14 @@ func (a *app) uploadImageHandler(w http.ResponseWriter, r *http.Request) {
 
 	user, _ := r.Context().Value(userCtx).(*storage.User)
 
-	image, err := a.svc.UploadImage(r.Context(), user.ID, header.Filename, file, contentType)
+	var imagePayload processor.ImagePayload
+
+	imagePayload.UserID = user.ID
+	imagePayload.FileName = header.Filename
+	imagePayload.Body = file
+	imagePayload.ContentType = contentType
+
+	image, err := a.svc.UploadImage(r.Context(), imagePayload)
 
 	if err != nil {
 		http.Error(w, "Unable to upload image", http.StatusInternalServerError)
@@ -53,7 +63,29 @@ func (a *app) uploadImageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *app) getImageByIDHandler(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("hello"))
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "id is not of type UUID from", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+
+	reader, contentType, err := a.svc.GetByImageId(ctx, id)
+	if err != nil {
+		http.Error(w, "Image not found", http.StatusNotFound)
+		return
+	}
+
+	defer reader.Close()
+
+	w.Header().Set("Content-Type", contentType)
+
+	_, err = io.Copy(w, reader)
+	if err != nil {
+		http.Error(w, "Unable to send image", http.StatusInternalServerError)
+		return
+	}
 
 }
 

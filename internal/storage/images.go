@@ -53,7 +53,7 @@ func (i *Images) Create(ctx context.Context, userId uuid.UUID, objectKey, conten
 
 }
 
-func (i *Images) GetById(ctx context.Context, id string) (*Image, error) {
+func (i *Images) GetById(ctx context.Context, id uuid.UUID) (*Image, error) {
 	query := `
 		select * from images 
 		where id = $1
@@ -78,6 +78,7 @@ func (i *Images) GetById(ctx context.Context, id string) (*Image, error) {
 	return &image, nil
 
 }
+
 func (i *Images) DeleteById(ctx context.Context, id string) error {
 	query := `
 		delete from images
