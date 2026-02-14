@@ -2,11 +2,16 @@ package processor
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
 	"github.com/boatnoah/iupload/internal/storage"
 	"github.com/google/uuid"
+)
+
+var (
+	ErrorNotFound = errors.New("Unable to find image")
 )
 
 type ObjectStore interface {
@@ -68,7 +73,28 @@ func (p *Processor) GetByImageId(ctx context.Context, id uuid.UUID) (io.ReadClos
 	return image, imageMetaData.ContentType, nil
 }
 
-func (p *Processor) DeleteByImageId() {
+func (p *Processor) DeleteByImageId(ctx context.Context, id uuid.UUID) error {
+	imageMetaData, err := p.storage.ImageStorage.GetById(ctx, id)
+
+	if err != nil {
+		return ErrorNotFound
+	}
+
+	err = p.storage.ImageStorage.DeleteById(ctx, id)
+
+	if err != nil {
+		return err
+	}
+
+	key := imageMetaData.ObjectKey
+
+	err = p.objectStore.Delete(ctx, key)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (p *Processor) TranformImage(operation string) {

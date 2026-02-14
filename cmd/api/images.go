@@ -89,13 +89,32 @@ func (a *app) getImageByIDHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+func (a *app) deleteImageHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "id is not of type UUID from", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+
+	err = a.svc.DeleteByImageId(ctx, id)
+	if err != nil {
+
+		if err == processor.ErrorNotFound {
+			http.Error(w, "Could not find image", http.StatusNotFound)
+			return
+		}
+
+		http.Error(w, "Something went wrong", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func (a *app) transformImageHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Write([]byte("hello"))
 
-}
-
-func (a *app) deleteImageHandler(w http.ResponseWriter, r *http.Request) {
-
-	w.Write([]byte("hello"))
 }

@@ -60,8 +60,9 @@ func main() {
 		r.Route("/images", func(r chi.Router) {
 			r.Use(app.authTokenMiddleware)
 			r.Post("/", app.uploadImageHandler)                  // upload images
-			r.Post("/{id}/transform", app.transformImageHandler) // transform images
 			r.Get("/{id}", app.getImageByIDHandler)              // transform images
+			r.Delete("/{id}", app.deleteImageHandler)            // delete images
+			r.Post("/{id}/transform", app.transformImageHandler) // transform images
 		})
 	})
 

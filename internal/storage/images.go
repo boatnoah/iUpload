@@ -79,7 +79,7 @@ func (i *Images) GetById(ctx context.Context, id uuid.UUID) (*Image, error) {
 
 }
 
-func (i *Images) DeleteById(ctx context.Context, id string) error {
+func (i *Images) DeleteById(ctx context.Context, id uuid.UUID) error {
 	query := `
 		delete from images
 		where id = $1

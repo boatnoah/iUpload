@@ -19,7 +19,7 @@ type Storage struct {
 	ImageStorage interface {
 		Create(context.Context, uuid.UUID, string, string) (*Image, error)
 		GetById(context.Context, uuid.UUID) (*Image, error)
-		DeleteById(context.Context, string) error
+		DeleteById(context.Context, uuid.UUID) error
 	}
 	UserStorage interface {
 		Create(context.Context, *User) error
