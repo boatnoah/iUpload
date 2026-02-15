@@ -114,7 +114,30 @@ func (a *app) deleteImageHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *app) transformImageHandler(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "id is not in UUID form", http.StatusBadRequest)
+		return
+	}
 
-	w.Write([]byte("hello"))
+	var tranformPayload processor.Transformations
 
+	decoder := json.NewDecoder(r.Body)
+
+	err = decoder.Decode(&tranformPayload)
+
+	if err != nil {
+		http.Error(w, "Unable decode json", http.StatusBadRequest)
+		return
+	}
+
+	ctx := r.Context()
+
+	bytes, err := a.svc.TranformImage(ctx, id, tranformPayload)
+
+	if err != nil {
+		http.Error(w, "Unable to transform image", http.StatusInternalServerError)
+		return
+	}
+	w.Write(bytes)
 }

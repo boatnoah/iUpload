@@ -1,15 +1,16 @@
 package processor
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"image"
 	"io"
 
 	"github.com/boatnoah/iupload/internal/storage"
 	"github.com/disintegration/imaging"
 	"github.com/google/uuid"
-	"github.com/mailru/easyjson/buffer"
 )
 
 var (
@@ -141,9 +142,33 @@ func (p *Processor) TranformImage(ctx context.Context, id uuid.UUID, transformPa
 	}
 
 	if transformPayload.Resize != nil {
+		width := transformPayload.Resize.Width
+		height := transformPayload.Resize.Height
+		img = imaging.Resize(img, width, height, imaging.Lanczos)
 	}
 
 	if transformPayload.Crop != nil {
+		width := transformPayload.Crop.Width
+		height := transformPayload.Crop.Height
+		x := transformPayload.Crop.X
+		y := transformPayload.Crop.Y
+
+		cfg, _, err := image.DecodeConfig(reader)
+
+		if err != nil {
+			return nil, err
+		}
+
+		boundsWidth := cfg.Width
+		boundsHeight := cfg.Height
+
+		err = validateValues(width, height, x, y, boundsWidth, boundsHeight)
+		if err != nil {
+			return nil, err
+		}
+
+		rect := image.Rect(x, y, x+width, y+height)
+		img = imaging.Crop(img, rect)
 	}
 
 	if transformPayload.Rotate != nil {
@@ -152,7 +177,7 @@ func (p *Processor) TranformImage(ctx context.Context, id uuid.UUID, transformPa
 	if transformPayload.Filters != nil {
 	}
 
-	var b buffer.Buffer
+	var b bytes.Buffer
 	var format imaging.Format
 
 	if contentType == "image/png" {
@@ -167,5 +192,34 @@ func (p *Processor) TranformImage(ctx context.Context, id uuid.UUID, transformPa
 		return nil, err
 	}
 
-	return b, nil
+	return b.Bytes(), nil
+}
+
+func validateValues(width, height, x, y, boundsWidth, boundsHeight int) error {
+	if x < 0 {
+		return errors.New("Can't have x be negative")
+	}
+
+	if y < 0 {
+		return errors.New("Can't have y be negative")
+	}
+
+	if width < 0 {
+		return errors.New("Can't have width be negative")
+	}
+
+	if height < 0 {
+		return errors.New("Can't have height be negative")
+	}
+
+	if x+width <= boundsWidth {
+		return errors.New("Can't exceed width")
+	}
+
+	if y+height <= boundsHeight {
+		return errors.New("Can't exceed height")
+	}
+
+	return nil
+
 }
