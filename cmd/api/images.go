@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -47,7 +46,6 @@ func (a *app) uploadImageHandler(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, "Unable to upload image", http.StatusInternalServerError)
-		fmt.Println(err)
 		return
 	}
 
@@ -120,14 +118,20 @@ func (a *app) transformImageHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var tranformPayload processor.Transformations
+	var tranformPayload processor.OperationPayload
 
 	decoder := json.NewDecoder(r.Body)
+	decoder.DisallowUnknownFields()
 
 	err = decoder.Decode(&tranformPayload)
 
 	if err != nil {
 		http.Error(w, "Unable decode json", http.StatusBadRequest)
+		return
+	}
+
+	if tranformPayload.Transformation == nil {
+		http.Error(w, "Must have some fields", http.StatusBadRequest)
 		return
 	}
 

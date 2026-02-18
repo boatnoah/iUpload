@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"image"
+	"image/color"
 	"io"
 
 	"github.com/boatnoah/iupload/internal/storage"
@@ -40,10 +41,9 @@ type OperationPayload struct {
 }
 
 type Transformations struct {
-	Resize  *Resize  `json:"resize"`
-	Crop    *Crop    `json:"crop"`
-	Rotate  *float64 `json:"rotate"`
-	Filters *Filters `json:"filters"`
+	Resize *Resize  `json:"resize"`
+	Crop   *Crop    `json:"crop"`
+	Rotate *float64 `json:"rotate"`
 }
 
 type Resize struct {
@@ -56,11 +56,6 @@ type Crop struct {
 	Height int `json:"height"`
 	X      int `json:"x"`
 	Y      int `json:"y"`
-}
-
-type Filters struct {
-	GrayScale bool `json:"grayscale"`
-	Sepia     bool `json:"sepia"`
 }
 
 func New(storage *storage.Storage, objectStore ObjectStore) *Processor {
@@ -128,7 +123,7 @@ func (p *Processor) DeleteByImageId(ctx context.Context, id uuid.UUID) error {
 	return nil
 }
 
-func (p *Processor) TranformImage(ctx context.Context, id uuid.UUID, transformPayload Transformations) ([]byte, error) {
+func (p *Processor) TranformImage(ctx context.Context, id uuid.UUID, transformPayload OperationPayload) ([]byte, error) {
 	reader, contentType, err := p.GetByImageId(ctx, id)
 
 	if err != nil {
@@ -141,28 +136,19 @@ func (p *Processor) TranformImage(ctx context.Context, id uuid.UUID, transformPa
 		return nil, err
 	}
 
-	if transformPayload.Resize != nil {
-		width := transformPayload.Resize.Width
-		height := transformPayload.Resize.Height
+	if transformPayload.Transformation.Resize != nil {
+		width := transformPayload.Transformation.Resize.Width
+		height := transformPayload.Transformation.Resize.Height
 		img = imaging.Resize(img, width, height, imaging.Lanczos)
 	}
 
-	if transformPayload.Crop != nil {
-		width := transformPayload.Crop.Width
-		height := transformPayload.Crop.Height
-		x := transformPayload.Crop.X
-		y := transformPayload.Crop.Y
+	if transformPayload.Transformation.Crop != nil {
+		width := transformPayload.Transformation.Crop.Width
+		height := transformPayload.Transformation.Crop.Height
+		x := transformPayload.Transformation.Crop.X
+		y := transformPayload.Transformation.Crop.Y
 
-		cfg, _, err := image.DecodeConfig(reader)
-
-		if err != nil {
-			return nil, err
-		}
-
-		boundsWidth := cfg.Width
-		boundsHeight := cfg.Height
-
-		err = validateValues(width, height, x, y, boundsWidth, boundsHeight)
+		err = validateValues(width, height, x, y, img.Bounds().Dx(), img.Bounds().Dy())
 		if err != nil {
 			return nil, err
 		}
@@ -171,10 +157,9 @@ func (p *Processor) TranformImage(ctx context.Context, id uuid.UUID, transformPa
 		img = imaging.Crop(img, rect)
 	}
 
-	if transformPayload.Rotate != nil {
-	}
-
-	if transformPayload.Filters != nil {
+	if transformPayload.Transformation.Rotate != nil {
+		angle := transformPayload.Transformation.Rotate
+		img = imaging.Rotate(img, *angle, color.Opaque)
 	}
 
 	var b bytes.Buffer
@@ -204,20 +189,20 @@ func validateValues(width, height, x, y, boundsWidth, boundsHeight int) error {
 		return errors.New("Can't have y be negative")
 	}
 
-	if width < 0 {
-		return errors.New("Can't have width be negative")
-	}
-
-	if height < 0 {
-		return errors.New("Can't have height be negative")
-	}
-
-	if x+width <= boundsWidth {
+	if x+width > boundsWidth {
 		return errors.New("Can't exceed width")
 	}
 
-	if y+height <= boundsHeight {
+	if y+height > boundsHeight {
 		return errors.New("Can't exceed height")
+	}
+
+	if width <= 0 {
+		return errors.New("Can't have width be negative")
+	}
+
+	if height <= 0 {
+		return errors.New("Can't have height be negative")
 	}
 
 	return nil
