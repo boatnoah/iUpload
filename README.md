@@ -1,37 +1,43 @@
-# iUpload
+# iUpload (Backend)
 
-A image processing service built with Go.
+Backend-only Go service for uploading, storing, retrieving, and transforming images. Provides REST endpoints for auth, image upload, on-the-fly transforms, and deletion. No frontend is shipped in this repository.
 
-# User Authentication
+## Stack
 
-    - Sign-Up: Allow users to create an account.
+- Go with chi router
+- PostgreSQL for metadata (users, sessions, image records)
+- S3-compatible object storage for image blobs
 
-    - Log-In: Allow users to log into their account.
+## Setup
 
-# Image Management
+Prerequisites: Go, PostgreSQL, and an S3-compatible bucket (AWS S3, MinIO, or LocalStack).
 
-    - Upload Image: Allow users to upload images.
+Run locally:
 
-    - Transform Image: Allow users to perform various transformations (resize, crop, rotate, watermark etc.).
+- `make build` to produce `bin/iupload`
+- `make run` or `go run ./cmd/api` to start the HTTP API on `:3000`
+- `make test` to run unit tests
 
-    - Retrieve Image: Allow users to retrieve a saved image in different formats.
+## API (v1)
 
-    - List Images: List all uploaded images by the user with metadata.
+All responses are JSON unless downloading an image. Authenticated image routes expect `Authorization: Bearer <session_token>` header.
 
-# Image Transformation
+- `POST /v1/register` — create user
+  - Body: `{ "first_name": "...", "last_name": "...", "user_name": "...", "password": "..." }`
+  - Returns session token
 
-    - Resize
+- `POST /v1/login` — login existing user
+  - Body: `{ "user_name": "...", "password": "..." }`
+  - Returns session token
 
-    - Crop
+- `POST /v1/images` — upload JPG/PNG
+  - Multipart field `image` (file)
+  - Returns image metadata (id, object key, content type, created_at)
 
-    - Rotate
+- `GET /v1/images/{id}` — fetch original image by UUID
 
-    - Watermark
+- `DELETE /v1/images/{id}` — delete image
 
-    - Flip
-
-    - Mirror
-
-    - Compress
-
-    - Change format (JPEG, PNG, etc.)
+- `POST /v1/images/{id}/transform` — apply transforms and return bytes
+  - JSON body: `{ "transformation": { "resize": {"width": 640, "height": 480}, "crop": {"width": 200, "height": 200, "x": 0, "y": 0}, "rotate": 90, "content_type": "image/png" } }`
+  - Supports `resize`, `crop`, `rotate` (degrees), and optional `content_type` (`image/jpeg` or `image/png`)
