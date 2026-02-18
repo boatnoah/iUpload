@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -140,6 +141,7 @@ func (a *app) transformImageHandler(w http.ResponseWriter, r *http.Request) {
 	bytes, err := a.svc.TranformImage(ctx, id, tranformPayload)
 
 	if err != nil {
+		fmt.Println(err)
 		http.Error(w, "Unable to transform image", http.StatusInternalServerError)
 		return
 	}

@@ -41,9 +41,10 @@ type OperationPayload struct {
 }
 
 type Transformations struct {
-	Resize *Resize  `json:"resize"`
-	Crop   *Crop    `json:"crop"`
-	Rotate *float64 `json:"rotate"`
+	Resize      *Resize  `json:"resize"`
+	Crop        *Crop    `json:"crop"`
+	Rotate      *float64 `json:"rotate"`
+	ContentType *string  `json:"content_type"`
 }
 
 type Resize struct {
@@ -162,6 +163,15 @@ func (p *Processor) TranformImage(ctx context.Context, id uuid.UUID, transformPa
 		img = imaging.Rotate(img, *angle, color.Opaque)
 	}
 
+	if transformPayload.Transformation.ContentType != nil {
+
+		err := validateContentType(*transformPayload.Transformation.ContentType)
+		if err != nil {
+			return nil, err
+		}
+		contentType = *transformPayload.Transformation.ContentType
+	}
+
 	var b bytes.Buffer
 	var format imaging.Format
 
@@ -178,6 +188,15 @@ func (p *Processor) TranformImage(ctx context.Context, id uuid.UUID, transformPa
 	}
 
 	return b.Bytes(), nil
+}
+
+func validateContentType(contentType string) error {
+
+	if contentType != "image/png" && contentType != "image/jpeg" {
+		return errors.New("Unable to convert to specified type")
+	}
+
+	return nil
 }
 
 func validateValues(width, height, x, y, boundsWidth, boundsHeight int) error {
